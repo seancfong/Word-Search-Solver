@@ -22,6 +22,6 @@ class SolverApp:
         self._refresh_display()
         self._root_window.mainloop()
 
-    
+
 if __name__ == '__main__':
     SolverApp().run()
