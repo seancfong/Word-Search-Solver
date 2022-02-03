@@ -154,3 +154,6 @@ fabric.properties
 *.xml
 *.pyc
 >>>>>>> Stashed changes
+src/test_image.jpg
+src/test_imaging.py
+src/test_imaging.py
