@@ -18,6 +18,7 @@ class Imaging:
         self._image = cv2.cvtColor(self._image, cv2.COLOR_BGR2RGB)
         # get the height and width of image
         self._image_height, self._image_width, _ = self._image.shape
+        self._x1, self._x2, self._y1, self._y2 = (None for _ in range(4))
 
     def get_image(self) -> 'Image':
         return self._image
@@ -28,14 +29,13 @@ class Imaging:
         '''
         return self._image_width, self._image_height
 
-    def resize(self, width, height) -> None:
-        '''
-        Resizes the image
-        '''
-        width = math.ceil(width)
-        height = math.ceil(height)
-        self._image = cv2.resize(self._image, (width, height))
+    def draw_from(self, x, y) -> None:
+        self._x1, self._y1 = x, y
+        cv2.rectangle(self._image, (x, y), (x, y), (0, 0, 255), 2)
 
+    def draw_to(self, x, y) -> None:
+        self._x2, self._y2 = x, y
+        cv2.rectangle(self._image, (self._x1, self._y1), (x, y), (0, 0, 255), 2)
 
 
 

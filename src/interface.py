@@ -16,9 +16,14 @@ class SolverApp:
         self._root_window.title('Word Search')
         self._root_window.geometry('800x600')
         self._root_window.minsize(width=300, height=300)
-        self._root_window.bind('<Configure>', image_resizer(self))
+        self._root_window.bind('<Configure>', image_updater(self))
+
         self._image_object = None
         self._image_panel = tkinter.Label()
+
+        self._image_panel.bind('<Button-1>', image_draw_begin(self))
+        self._image_panel.bind('<B1-Motion>', image_draw_begin(self))
+
         self._open_button = tkinter.Button(
             self._root_window, text='Open Image', command=self._open_image
         )
@@ -30,13 +35,14 @@ class SolverApp:
             sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W
         )
 
+
     def _convert_image(self) -> 'PhotoImage':
         '''
         Converts the cv2 image into a format supported by Tkinter to display
         '''
         # convert cv2 image to PIL
         to_display = Image.fromarray(self._image_object.get_image())
-        img_width, img_height = map(math.ceil, self._image_object.get_image_dimensions())
+        img_width, img_height = self._image_object.get_image_dimensions()
         window_height = self._root_window.winfo_height()
         to_display = to_display.resize((window_height * img_width // img_height, window_height))
         # convert PIL image to ImageTk
@@ -53,7 +59,24 @@ class SolverApp:
         path = filedialog.askopenfilename()
         # update current image
         self._image_object = imaging.Imaging(path)
-        image_resizer(self)()
+        self._update_image()
+
+
+    def _update_image(self) -> None:
+        '''
+        Updates the image by calling the higher order function image_updater
+        '''
+        image_updater(self)()
+
+
+    def canvas_to_img(self, canvas_x, canvas_y) -> (int, int):
+        '''
+        Converts canvas coordinates to image coordinates
+        '''
+        img_width, img_height = self._image_object.get_image_dimensions()
+        self._image_panel.update()
+        canvas_width, canvas_height = self._image_panel.winfo_width(), self._image_panel.winfo_height()
+        return math.ceil(canvas_x / canvas_width * img_width), math.ceil(canvas_y / canvas_height * img_height)
 
 
     def run(self) -> None:
@@ -63,20 +86,47 @@ class SolverApp:
         self._root_window.mainloop()
 
 
-def image_resizer(self):
-    def _update_image(*event) -> None:
+###############################################
+# Higher Order Functions
+
+def image_draw_begin(self) -> callable:
+    def _begin_draw(event) -> None:
+        '''
+        Begins a point for the drawing
+        '''
+        print(event, self.canvas_to_img(event.x, event.y))
+        self._image_object.draw_from(*self.canvas_to_img(event.x, event.y))
+        self._update_image()
+
+    return _begin_draw
+
+# TODO: edit drawing
+def image_draw_middle(self) -> callable:
+    def _edit_draw(event) -> None:
+        '''
+        Begins a point for the drawing
+        '''
+        self._image_object.draw_to(*self.canvas_to_img(event.x, event.y))
+        self._update_image()
+
+    return _edit_draw
+
+
+def image_updater(self) -> callable:
+    def _update(event=None) -> None:
         '''
         Updates the current image displayed
         '''
-        # update the image
-        to_display = self._convert_image()
+        if self._image_object:
+            # update the image
+            to_display = self._convert_image()
 
-        # update the image panel
-        self._image_panel.configure(image=to_display)
-        # set an attribute to the label in order for the image to render correctly
-        self._image_panel.image = to_display
+            # update the image panel
+            self._image_panel.configure(image=to_display)
+            # set an attribute to the label in order for the image to render correctly
+            self._image_panel.image = to_display
 
-    return _update_image
+    return _update
 
 
 if __name__ == '__main__':
