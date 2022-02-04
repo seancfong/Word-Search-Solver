@@ -10,6 +10,7 @@ import cv2
 from PIL import Image, ImageTk
 from tkinter import filedialog
 
+
 class SolverApp:
     def __init__(self) -> None:
         self._root_window = tkinter.Tk()
@@ -19,10 +20,9 @@ class SolverApp:
         self._root_window.bind('<Configure>', image_updater(self))
 
         self._image_object = None
-        self._image_panel = tkinter.Label()
+        self._canvas = tkinter.Canvas(width=300, height=200, bg='black')
 
-        self._image_panel.bind('<Button-1>', image_draw_begin(self))
-        self._image_panel.bind('<B1-Motion>', image_draw_begin(self))
+        self._canvas.bind('<Button-1>', image_draw_begin(self))
 
         self._open_button = tkinter.Button(
             self._root_window, text='Open Image', command=self._open_image
@@ -30,7 +30,7 @@ class SolverApp:
         self._open_button.grid(
             row=0, column=0
         )
-        self._image_panel.grid(
+        self._canvas.grid(
             row=0, column=1,
             sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W
         )
@@ -42,9 +42,17 @@ class SolverApp:
         '''
         # convert cv2 image to PIL
         to_display = Image.fromarray(self._image_object.get_image())
+
+        # resize image
         img_width, img_height = self._image_object.get_image_dimensions()
         window_height = self._root_window.winfo_height()
         to_display = to_display.resize((window_height * img_width // img_height, window_height))
+        # resize canvas
+        self._canvas.configure(width=(window_height * img_width // img_height), height=window_height)
+
+        # shapes
+        self._bounding_box = None
+
         # convert PIL image to ImageTk
         to_display = ImageTk.PhotoImage(to_display)
         return to_display
@@ -74,8 +82,8 @@ class SolverApp:
         Converts canvas coordinates to image coordinates
         '''
         img_width, img_height = self._image_object.get_image_dimensions()
-        self._image_panel.update()
-        canvas_width, canvas_height = self._image_panel.winfo_width(), self._image_panel.winfo_height()
+        self._canvas.update()
+        canvas_width, canvas_height = self._canvas.winfo_width(), self._canvas.winfo_height()
         return math.ceil(canvas_x / canvas_width * img_width), math.ceil(canvas_y / canvas_height * img_height)
 
 
@@ -95,21 +103,12 @@ def image_draw_begin(self) -> callable:
         Begins a point for the drawing
         '''
         print(event, self.canvas_to_img(event.x, event.y))
-        self._image_object.draw_from(*self.canvas_to_img(event.x, event.y))
-        self._update_image()
+        if not self._bounding_box:
+            self._bounding_box = self._canvas.create_oval(event.x, event.y, event.x+10, event.y+10)
+        else:
+            self._canvas.coords(self._bounding_box, event.x, event.y, event.x+10, event.y+10)
 
     return _begin_draw
-
-# TODO: edit drawing
-def image_draw_middle(self) -> callable:
-    def _edit_draw(event) -> None:
-        '''
-        Begins a point for the drawing
-        '''
-        self._image_object.draw_to(*self.canvas_to_img(event.x, event.y))
-        self._update_image()
-
-    return _edit_draw
 
 
 def image_updater(self) -> callable:
@@ -122,9 +121,9 @@ def image_updater(self) -> callable:
             to_display = self._convert_image()
 
             # update the image panel
-            self._image_panel.configure(image=to_display)
+            self._canvas.create_image(0, 0, image=to_display, anchor=tkinter.NW)
             # set an attribute to the label in order for the image to render correctly
-            self._image_panel.image = to_display
+            self._canvas.image = to_display
 
     return _update
 
