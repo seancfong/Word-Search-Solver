@@ -30,11 +30,14 @@ class SolverApp:
         self._canvas = tkinter.Canvas(width=300, height=200, bg='black')
         self._bounding_box = None
         self._image_object = None
-        self._crossword_info = None
+        self._wordsearch_info = None
+        self._wordbank_info = None
+        self._wordsearch_results = None
+        self._wordbank_results = None
 
         # buttons
         self._autosolve_mode = tkinter.Button(
-            self._menu, text='Crossword Solver'
+            self._menu, text='Word Search Solver'
         )
         self._open_button = tkinter.Button(
             self._sidebar, text='Open Image', command=self._open_image
@@ -43,10 +46,19 @@ class SolverApp:
             self._sidebar, text='Solve', command=self._solve_puzzle
         )
         self._puzzle_select_button = tkinter.Button(
-            self._sidebar, text='Select Crossword', command=self._begin_crossword_select
+            self._sidebar, text='Select Word Search', command=self._begin_wordsearch_select
+        )
+        self._word_select_button = tkinter.Button(
+            self._sidebar, text='Select Word Bank', command=self._begin_wordbank_select
         )
         self._redo_select_button = tkinter.Button(
-            self._sidebar_bottom, text='Redo Selection', command=self._redo_select
+            self._sidebar_bottom, text='Redo Selection', command=self._reset_select
+        )
+        self._confirm_wordsearch_button = tkinter.Button(
+            self._sidebar_bottom, text='Confirm Selection', command=self._confirm_wordsearch_selection
+        )
+        self._confirm_wordbank_button = tkinter.Button(
+            self._sidebar_bottom, text='Confirm Selection', command=self._confirm_wordbank_selection
         )
 
         # initialize positions
@@ -67,13 +79,9 @@ class SolverApp:
         self._open_button.grid(
             row=0, column=0, sticky='nesw'
         )
-        self._process_button.grid(
-            row=2, column=0, sticky='nesw'
-        )
         self._autosolve_mode.grid(
             row=0, column=0, sticky='n'
         )
-
 
     def _convert_image(self) -> 'PhotoImage':
         '''
@@ -93,7 +101,6 @@ class SolverApp:
         to_display = ImageTk.PhotoImage(to_display)
         return to_display
 
-
     def _open_image(self) -> None:
         '''
         Prompts the user to select and image and
@@ -108,15 +115,13 @@ class SolverApp:
         except Exception as e:
             print(e)
         else:
-            self._begin_crossword_select_mode()
-
+            self._begin_wordsearch_select_mode()
 
     def _update_image(self) -> None:
         '''
         Updates the image by calling the higher order function image_updater
         '''
         image_updater(self)()
-
 
     def canvas_to_img(self, canvas_x, canvas_y) -> (int, int):
         '''
@@ -127,41 +132,20 @@ class SolverApp:
         canvas_width, canvas_height = self._canvas.winfo_width(), self._canvas.winfo_height()
         return math.ceil(canvas_x / canvas_width * img_width), math.ceil(canvas_y / canvas_height * img_height)
 
-
-    def _begin_crossword_select_mode(self) -> None:
+    def _begin_wordsearch_select_mode(self) -> None:
         '''
         Updates interface for autosolve mode
         '''
         self._puzzle_select_button.grid(
             row=1, column=0, sticky='nesw'
         )
-
-    def _begin_crossword_select(self) -> None:
-        '''
-        Begins the crossword selector by binding events to the canvas
-        '''
-        # bind events to canvas
-        self._canvas.bind('<Button-1>', bounding_box_begin(self))
-        self._canvas.bind('<B1-Motion>', bounding_box_edit(self))
-        self._canvas.bind('<ButtonRelease-1>', bounding_box_finish(self))
-        # edit buttons
-        self._puzzle_select_button.configure(text='Confirm', command=self._confirm_crossword_selection)
-        self._redo_select_button.grid(
-            row=0, column=0, sticky='nesw'
+        self._word_select_button.grid(
+            row=2, column=0, sticky='nesw'
         )
 
-    def _redo_select(self) -> None:
+    def _end_selection(self) -> None:
         '''
-        Redoes the selection process for the bounding box
-        '''
-        if self._bounding_box:
-            self._bounding_box = None
-            self._canvas.delete('bounding-box')
-
-
-    def _confirm_crossword_selection(self) -> None:
-        '''
-        Confirms the crossword puzzle is selected
+        Ends the selection mode
         '''
         # remove drawing
         self._canvas.delete('bounding-box')
@@ -169,20 +153,105 @@ class SolverApp:
         self._canvas.unbind('<Button-1>')
         self._canvas.unbind('<B1-Motion>')
         self._canvas.unbind('<ButtonRelease-1>')
-        # remove selection buttons
-        self._redo_select_button.grid_forget()
-        self._crossword_info = self._bounding_box
 
+    def _begin_wordsearch_select(self) -> None:
+        '''
+        Begins the wordsearch selector by binding events to the canvas
+        '''
+        self._reset_select()
+        # bind events to canvas
+        self._canvas.bind('<Button-1>', bounding_box_begin(self))
+        self._canvas.bind('<B1-Motion>', bounding_box_edit(self))
+        self._canvas.bind('<ButtonRelease-1>', bounding_box_finish(self))
+        # edit buttons
+        self._redo_select_button.grid(
+            row=0, column=0, sticky='nesw'
+        )
+        self._confirm_wordsearch_button.grid(
+            row=1, column=0, sticky='nesw'
+        )
+
+    def _reset_select(self) -> None:
+        '''
+        Resets the selection process for the bounding box
+        '''
+        if self._bounding_box:
+            self._bounding_box = None
+            self._canvas.delete('bounding-box')
+
+    def _confirm_wordsearch_selection(self) -> None:
+        '''
+        Confirms the wordsearch puzzle is selected
+        '''
+        self._end_selection()
+        # remove selection buttons
+        self._puzzle_select_button['state'] = tkinter.DISABLED
+        self._redo_select_button.grid_forget()
+        self._confirm_wordsearch_button.grid_forget()
+        self._wordsearch_info = self._bounding_box
+        self._bounding_box = None
+        self._check_to_solve()
+
+    def _begin_wordbank_select(self) -> None:
+        '''
+        Begins selection for the word bank
+        '''
+        self._reset_select()
+        # bind events to canvas
+        self._canvas.bind('<Button-1>', bounding_box_begin(self))
+        self._canvas.bind('<B1-Motion>', bounding_box_edit(self))
+        self._canvas.bind('<ButtonRelease-1>', bounding_box_finish(self))
+        # edit buttons
+        self._redo_select_button.grid(
+            row=0, column=0, sticky='nesw'
+        )
+        self._confirm_wordbank_button.grid(
+            row=1, column=0, sticky='nesw'
+        )
+
+    def _confirm_wordbank_selection(self) -> None:
+        '''
+        Confirms the word bank is selected
+        '''
+        self._end_selection()
+        # remove selection buttons
+        self._word_select_button['state'] = tkinter.DISABLED
+        self._redo_select_button.grid_forget()
+        self._confirm_wordbank_button.grid_forget()
+        self._wordbank_info = self._bounding_box
+        self._bounding_box = None
+        self._check_to_solve()
+
+    def _check_to_solve(self) -> None:
+        '''
+        Checks whether puzzle has enough data to be solved
+        '''
+        if self._wordsearch_info and self._wordbank_info:
+            self._process_button.grid(
+                row=3, column=0
+            )
 
     def _solve_puzzle(self) -> None:
         '''
         Solves the puzzle with all the data from image scanned
         '''
-        # crossword section
-        x1, y1 = self._crossword_info.get_x(), self._crossword_info.get_y()
-        x2, y2 = self._crossword_info.get_end_x(), self._crossword_info.get_end_y()
+        # wordsearch section
+        x1, y1 = self._wordsearch_info.get_x(), self._wordsearch_info.get_y()
+        x2, y2 = self._wordsearch_info.get_end_x(), self._wordsearch_info.get_end_y()
         print(x1, y1, x2, y2)
-        self._image_object.crop_selection(self.canvas_to_img(x1, y1), self.canvas_to_img(x2, y2))
+        self._wordsearch_results = self._image_object.process_selection(
+            self.canvas_to_img(x1, y1), self.canvas_to_img(x2, y2),
+            config=r'--oem 3 --psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ1')
+
+        # wordbank section
+        x1, y1 = self._wordbank_info.get_x(), self._wordbank_info.get_y()
+        x2, y2 = self._wordbank_info.get_end_x(), self._wordbank_info.get_end_y()
+        print(x1, y1, x2, y2)
+        self._wordbank_results = self._image_object.process_selection(
+            self.canvas_to_img(x1, y1), self.canvas_to_img(x2, y2),
+            config=r'--oem 3 --psm 6 -c tessedit_char_whitelist=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1')
+
+
 
 
     def run(self) -> None:
@@ -210,6 +279,7 @@ def bounding_box_begin(self) -> callable:
 
     return _begin_draw
 
+
 def bounding_box_edit(self) -> callable:
     def _edit_draw(event) -> None:
         '''
@@ -221,6 +291,7 @@ def bounding_box_edit(self) -> callable:
                                 self._bounding_box.get_x(), self._bounding_box.get_y(), event.x, event.y)
 
     return _edit_draw
+
 
 def bounding_box_finish(self) -> callable:
     def _finish_draw(event) -> None:
