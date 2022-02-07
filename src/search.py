@@ -42,7 +42,7 @@ class Searcher:
         '''
         Recursively searches for a word in a given direction
         '''
-        print(f'ind: {ind} r, c: {(r, c)}, word: {word}, dx, dy: {dx, dy}')
+        # print(f'ind: {ind} r, c: {(r, c)}, word: {word}, dx, dy: {dx, dy}')
         if (r < 0 or c < 0) or \
                 (r >= len(self._contents)) or (c >= len(self._contents[r])) or \
                 ind == len(word) or word[ind] != self._contents[r][c]:  # out of range

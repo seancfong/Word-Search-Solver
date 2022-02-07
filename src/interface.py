@@ -6,7 +6,7 @@ a user interface to import and view solvable puzzles
 import imaging
 import math
 import tkinter
-import cv2
+import search
 from PIL import Image, ImageTk
 from tkinter import filedialog
 from geometry import Geometry
@@ -35,6 +35,12 @@ class SolverApp:
         self._wordsearch_results = None
         self._wordbank_results = None
 
+        # for solutions
+        self._word_select_list = tkinter.Listbox(
+            self._sidebar_bottom
+        )
+        self._answer_dict = dict()
+
         # buttons
         self._autosolve_mode = tkinter.Button(
             self._menu, text='Word Search Solver'
@@ -48,7 +54,7 @@ class SolverApp:
         self._puzzle_select_button = tkinter.Button(
             self._sidebar, text='Select Word Search', command=self._begin_wordsearch_select
         )
-        self._word_select_button = tkinter.Button(
+        self._word_bank_select_button = tkinter.Button(
             self._sidebar, text='Select Word Bank', command=self._begin_wordbank_select
         )
         self._redo_select_button = tkinter.Button(
@@ -139,7 +145,7 @@ class SolverApp:
         self._puzzle_select_button.grid(
             row=1, column=0, sticky='nesw'
         )
-        self._word_select_button.grid(
+        self._word_bank_select_button.grid(
             row=2, column=0, sticky='nesw'
         )
 
@@ -215,7 +221,7 @@ class SolverApp:
         '''
         self._end_selection()
         # remove selection buttons
-        self._word_select_button['state'] = tkinter.DISABLED
+        self._word_bank_select_button['state'] = tkinter.DISABLED
         self._redo_select_button.grid_forget()
         self._confirm_wordbank_button.grid_forget()
         self._wordbank_info = self._bounding_box
@@ -235,23 +241,48 @@ class SolverApp:
         '''
         Solves the puzzle with all the data from image scanned
         '''
+        # remove buttons
+        self._process_button.grid_forget()
+        self._word_bank_select_button.grid_forget()
+        self._puzzle_select_button.grid_forget()
+
+        # insert listbox
+        self._word_select_list.grid(
+            row=0, column=0
+        )
+
         # wordsearch section
         x1, y1 = self._wordsearch_info.get_x(), self._wordsearch_info.get_y()
         x2, y2 = self._wordsearch_info.get_end_x(), self._wordsearch_info.get_end_y()
-        print(x1, y1, x2, y2)
+        # print(x1, y1, x2, y2)
         self._wordsearch_results = self._image_object.process_selection(
             self.canvas_to_img(x1, y1), self.canvas_to_img(x2, y2),
             config=r'--oem 3 --psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ1')
 
+        # create a 2-D list with the current data
+        wordsearch_content = []
+        for result in self._wordsearch_results:
+            wordsearch_content.append(list(result.char))
+        print(wordsearch_content)
+
         # wordbank section
         x1, y1 = self._wordbank_info.get_x(), self._wordbank_info.get_y()
         x2, y2 = self._wordbank_info.get_end_x(), self._wordbank_info.get_end_y()
-        print(x1, y1, x2, y2)
+        # print(x1, y1, x2, y2)
         self._wordbank_results = self._image_object.process_selection(
             self.canvas_to_img(x1, y1), self.canvas_to_img(x2, y2),
             config=r'--oem 3 --psm 6 -c tessedit_char_whitelist=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1')
 
+        # solve the wordsearch
+        searcher = search.Searcher(wordsearch_content)
 
+        # insert words into word list
+        for index, result in enumerate(self._wordbank_results):
+            word = result.char
+            self._word_select_list.insert(index, word)
+            self._answer_dict[word] = searcher.search(word)
+
+        self._word_select_list.bind('<<ListboxSelect>>', _word_selector(self))
 
 
     def run(self) -> None:
@@ -323,6 +354,22 @@ def image_updater(self) -> callable:
             self._canvas.image = to_display
 
     return _update
+
+
+def _word_selector(self) -> callable:
+    def _select(event=None) -> None:
+        '''
+        Handles the selection of a word
+        '''
+        selection = event.widget.curselection()
+        print(selection)
+        data = event.widget.get(selection[0])  # returns the value in the listbox
+        # solve this data
+        print(data)
+        print(self._answer_dict[data])
+
+    return _select
+
 
 
 if __name__ == '__main__':
