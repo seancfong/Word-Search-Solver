@@ -31,15 +31,21 @@ class SolverApp:
         self._bounding_box = None
         self._image_object = None
         self._wordsearch_info = None
+        self._wordsearch_content = []
         self._wordbank_info = None
         self._wordsearch_results = None
         self._wordbank_results = None
+        self._wordsearch_on_img = None
+        self._wordbank_on_img = None
 
         # for solutions
         self._word_select_list = tkinter.Listbox(
-            self._sidebar_bottom
+            self._sidebar_bottom, selectmode=tkinter.MULTIPLE
         )
         self._answer_dict = dict()
+        self._puzzle_origin = None
+        self._puzzle_unit_x = None
+        self._puzzle_unit_y = None
 
         # buttons
         self._autosolve_mode = tkinter.Button(
@@ -138,6 +144,15 @@ class SolverApp:
         canvas_width, canvas_height = self._canvas.winfo_width(), self._canvas.winfo_height()
         return math.ceil(canvas_x / canvas_width * img_width), math.ceil(canvas_y / canvas_height * img_height)
 
+    def img_to_canvas(self, img_x, img_y) -> (int, int):
+        '''
+        Converts image coordinates to canvas coordinates
+        '''
+        img_width, img_height = self._image_object.get_image_dimensions()
+        self._canvas.update()
+        canvas_width, canvas_height = self._canvas.winfo_width(), self._canvas.winfo_height()
+        return math.ceil(img_x / img_width * canvas_width), math.ceil(img_y / img_height * canvas_height)
+
     def _begin_wordsearch_select_mode(self) -> None:
         '''
         Updates interface for autosolve mode
@@ -195,6 +210,7 @@ class SolverApp:
         self._redo_select_button.grid_forget()
         self._confirm_wordsearch_button.grid_forget()
         self._wordsearch_info = self._bounding_box
+        self._wordsearch_on_img = self.canvas_to_img(self._bounding_box.get_x(), self._bounding_box.get_y())
         self._bounding_box = None
         self._check_to_solve()
 
@@ -225,6 +241,7 @@ class SolverApp:
         self._redo_select_button.grid_forget()
         self._confirm_wordbank_button.grid_forget()
         self._wordbank_info = self._bounding_box
+        self._wordbank_on_img = self.canvas_to_img(self._bounding_box.get_x(), self._bounding_box.get_y())
         self._bounding_box = None
         self._check_to_solve()
 
@@ -260,10 +277,10 @@ class SolverApp:
             config=r'--oem 3 --psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ1')
 
         # create a 2-D list with the current data
-        wordsearch_content = []
+        self._wordsearch_content = []
         for result in self._wordsearch_results:
-            wordsearch_content.append(list(result.char))
-        print(wordsearch_content)
+            self._wordsearch_content.append(list(result.char))
+        print(self._wordsearch_content)
 
         # wordbank section
         x1, y1 = self._wordbank_info.get_x(), self._wordbank_info.get_y()
@@ -274,7 +291,7 @@ class SolverApp:
             config=r'--oem 3 --psm 6 -c tessedit_char_whitelist=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1')
 
         # solve the wordsearch
-        searcher = search.Searcher(wordsearch_content)
+        searcher = search.Searcher(self._wordsearch_content)
 
         # insert words into word list
         for index, result in enumerate(self._wordbank_results):
@@ -283,6 +300,28 @@ class SolverApp:
             self._answer_dict[word] = searcher.search(word)
 
         self._word_select_list.bind('<<ListboxSelect>>', _word_selector(self))
+
+    def draw_solution(self, word):
+        '''
+        Draws a solution for the given word
+        '''
+        # update puzzle units
+        self._create_puzzle_units()
+        box = self._canvas.create_line(
+            self._puzzle_origin[0], self._puzzle_origin[1], self._puzzle_origin[0] + 100, self._puzzle_origin[1] + 100,
+            tags='solution_-ine', fill='blue', width=2)
+
+    def _create_puzzle_units(self):
+        '''
+        Creates units on puzzle image to simplify drawing
+        '''
+        # puzzle origin is first item in wordsearch results
+        # find origin of the selected image and convert to canvas coords
+        cropped_origin_x, cropped_origin_y = self.img_to_canvas(self._wordsearch_results[0].x, self._wordsearch_results[0].y)
+        # find origin of the wordsearch info and convert to canvas coords
+        wordsearch_origin_x, wordsearch_origin_y = self.img_to_canvas(*self._wordsearch_on_img)
+        self._puzzle_origin = cropped_origin_x + wordsearch_origin_x, cropped_origin_y + wordsearch_origin_y
+        print('origin', self._puzzle_origin)
 
 
     def run(self) -> None:
@@ -361,12 +400,13 @@ def _word_selector(self) -> callable:
         '''
         Handles the selection of a word
         '''
-        selection = event.widget.curselection()
-        print(selection)
-        data = event.widget.get(selection[0])  # returns the value in the listbox
-        # solve this data
-        print(data)
-        print(self._answer_dict[data])
+        selections = event.widget.curselection()
+        print(selections)
+        for index in selections:
+            selection_name = event.widget.get(index)  # returns the indices selected in the listbox
+            # solve this data
+            print(self._answer_dict[selection_name])
+            self.draw_solution(selection_name)
 
     return _select
 
