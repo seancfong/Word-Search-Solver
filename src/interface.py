@@ -393,13 +393,13 @@ class SolverApp:
         origin_x, origin_y = self._puzzle_origin[0], self._puzzle_origin[1]
         found_search_list = self._answer_dict[word]
         for fs in found_search_list:
-            print(fs.r, fs.c)
+            # print(fs.r, fs.c)
             x1, y1 = origin_x + (self._puzzle_unit_x * fs.c), origin_y + (self._puzzle_unit_y * fs.r)
             x2, y2 = x1 + (fs.dx * (len(word) - 0.5) * self._puzzle_unit_x), y1 + \
                      (fs.dy * (len(word) - 0.5) * self._puzzle_unit_y)
             self._canvas.create_line(
                 x1, y1, x2, y2,
-                tags='solution-line-' + word, fill='green', stipple='gray50', width=8)
+                tags='solution-line', fill='green', stipple='gray50', width=8)
 
     def _create_puzzle_origin(self) -> None:
         '''
@@ -507,11 +507,13 @@ def _word_selector(self) -> callable:
         Handles the selection of a word
         '''
         selections = event.widget.curselection()
+        self._calculate_units()
+        self._canvas.delete('solution-line')
         print(selections)
         for index in selections:
             selection_name = event.widget.get(index)  # returns the indices selected in the listbox
             # solve this data
-            print(self._answer_dict[selection_name])
+            # print(self._answer_dict[selection_name])
             try:
                 self.draw_solution(selection_name)
             except Exception as e:
