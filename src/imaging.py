@@ -6,7 +6,16 @@ from collections import namedtuple
 import pytesseract
 import cv2
 
-TextData = namedtuple('TextData', ['char', 'x', 'y', 'w', 'h', 'conf'])
+
+class TextData:
+    def __init__(self, char, x, y, w, h, conf):
+        self.char = char
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.conf = conf
+
 
 # Configuration for pytesseract
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
@@ -57,8 +66,8 @@ class Imaging:
                     all_data.append(TextData(x=x, y=y, w=w, h=h, char=char, conf=conf))
 
         print(all_data)
-        cv2.imshow('Test image', cropped_img)
-        cv2.waitKey(0)
+        # cv2.imshow('Test image', cropped_img)
+        # cv2.waitKey(0)
         return all_data
 
 

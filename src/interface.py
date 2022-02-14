@@ -9,6 +9,7 @@ import tkinter
 import search
 from PIL import Image, ImageTk
 from tkinter import filedialog
+from tkinter import scrolledtext
 from geometry import Geometry
 
 
@@ -25,6 +26,8 @@ class SolverApp:
         self._menu = tkinter.Frame()
         self._sidebar = tkinter.Frame()
         self._sidebar_bottom = tkinter.Frame()
+        self._sidebar_right_1 = tkinter.Frame()
+        self._sidebar_right_2 = tkinter.Frame()
 
         # canvas
         self._canvas = tkinter.Canvas(width=300, height=200, bg='black')
@@ -32,11 +35,13 @@ class SolverApp:
         self._image_object = None
         self._wordsearch_info = None
         self._wordsearch_content = []
+        self._wordbank_content = []
         self._wordbank_info = None
         self._wordsearch_results = None
         self._wordbank_results = None
         self._wordsearch_on_img = None
         self._wordbank_on_img = None
+
 
         # for solutions
         self._word_select_list = tkinter.Listbox(
@@ -73,6 +78,18 @@ class SolverApp:
         self._confirm_wordbank_button = tkinter.Button(
             self._sidebar_bottom, text='Confirm Selection', command=self._confirm_wordbank_selection
         )
+        self._edit_wordsearch_button = tkinter.Button(
+            self._sidebar_bottom, text='Edit Word Search', command=self._edit_wordsearch
+        )
+        self._edit_wordsearch_form = scrolledtext.ScrolledText(
+            self._sidebar_right_1, width=30, height=20
+        )
+        self._edit_wordbank_form = scrolledtext.ScrolledText(
+            self._sidebar_right_2, width=30, height=20
+        )
+        self._confirm_edit_wordsearch_button = tkinter.Button(
+            self._sidebar_right_1, text='Update', command=self._update_wordsearch
+        )
 
         # initialize positions
         self._menu.grid(
@@ -87,6 +104,12 @@ class SolverApp:
         )
         self._sidebar_bottom.grid(
             row=1, column=2
+        )
+        self._sidebar_right_1.grid(
+            row=0, column=3
+        )
+        self._sidebar_right_2.grid(
+            row=0, column=4
         )
 
         self._open_button.grid(
@@ -266,11 +289,6 @@ class SolverApp:
         self._word_bank_select_button.grid_forget()
         self._puzzle_select_button.grid_forget()
 
-        # insert listbox
-        self._word_select_list.grid(
-            row=0, column=0
-        )
-
         # wordsearch section
         x1, y1 = self._wordsearch_info.get_x(), self._wordsearch_info.get_y()
         x2, y2 = self._wordsearch_info.get_end_x(), self._wordsearch_info.get_end_y()
@@ -278,30 +296,6 @@ class SolverApp:
         self._wordsearch_results = self._image_object.process_selection(
             self.canvas_to_img(x1, y1), self.canvas_to_img(x2, y2),
             config=r'--oem 3 --psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ1')
-
-        # create a 2-D list with the current data
-        self._wordsearch_content = []
-        sum_width = 0
-        sum_height = 0
-        y_count = 0
-        x_count = 0
-        for result in self._wordsearch_results:
-            line_as_char = list(result.char)
-            self._wordsearch_content.append(line_as_char)
-            y_count += 1
-            if x_count == 0:
-                x_count = len(line_as_char)
-            elif len(line_as_char) != x_count:
-                print('discrepancy found in line lengths')
-
-            sum_width += result.w
-        sum_height = self._wordsearch_results[-1].y + self._wordsearch_results[-1].h - self._wordsearch_results[0].y
-
-        print(sum_width, sum_height)
-        self._puzzle_unit_x, self._puzzle_unit_y = self.img_to_canvas(sum_width / x_count ** 2, sum_height / y_count, rounding=False)
-        print('units', self._puzzle_unit_x, self._puzzle_unit_y)
-
-        print(self._wordsearch_content)
 
         # wordbank section
         x1, y1 = self._wordbank_info.get_x(), self._wordbank_info.get_y()
@@ -311,23 +305,91 @@ class SolverApp:
             self.canvas_to_img(x1, y1), self.canvas_to_img(x2, y2),
             config=r'--oem 3 --psm 6 -c tessedit_char_whitelist=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1')
 
+        self.create_solution()
+
+        # insert widgets
+        self._word_select_list.grid(
+            row=0, column=0
+        )
+        self._edit_wordsearch_button.grid(
+            row=1, column=0
+        )
+
+
+    def create_solution(self) -> None:
+        '''
+        Creates solution for puzzle after reading data
+        '''
+        # create a 2-D list with the current data
+        self._wordsearch_content = []
+
+        for ind, result in enumerate(self._wordsearch_results):
+            line_as_char = []
+            for char in result.char:
+                line_as_char.append(char if char != '1' else 'I')
+            self._wordsearch_content.append(line_as_char)
+
+        self._calculate_units()
+        print(self._wordsearch_content)
+        # update wordbank content
+        self._wordbank_content = [entry.char for entry in self._wordbank_results]
+
+        self.solve_and_update()
+
+    def _calculate_units(self) -> None:
+        '''
+        Calculates units for drawing on canvas
+        '''
+        sum_height = self._wordsearch_results[-1].y + self._wordsearch_results[-1].h - self._wordsearch_results[0].y
+        _, self._puzzle_unit_y = self.img_to_canvas(0, sum_height / len(self._wordsearch_content), rounding=False)
+        self._puzzle_unit_x = self._puzzle_unit_y
+        print('units', self._puzzle_unit_x, self._puzzle_unit_y)
+
+    def solve_and_update(self) -> None:
+        '''
+        Solves the puzzle and updates the answer dictionary
+        '''
         # solve the wordsearch
         searcher = search.Searcher(self._wordsearch_content)
 
+        self._word_select_list.delete(0, tkinter.END)
+
+        print('Updating answer dict')
         # insert words into word list
-        for index, result in enumerate(self._wordbank_results):
-            word = result.char
+        for index, result in enumerate(self._wordbank_content):
+            word = result.upper()
             self._word_select_list.insert(index, word)
             self._answer_dict[word] = searcher.search(word)
-
+        print(self._answer_dict)
         self._word_select_list.bind('<<ListboxSelect>>', _word_selector(self))
 
-    def draw_solution(self, word):
+    def _edit_wordsearch(self) -> None:
+        '''
+        Edit the wordsearch puzzle
+        '''
+        self._edit_wordsearch_form.grid(
+            row=0, column=0
+        )
+        self._edit_wordbank_form.grid(
+            row=1, column=0
+        )
+        self._confirm_edit_wordsearch_button.grid(
+            row=2, column=0
+        )
+
+        for line_list in self._wordsearch_content:
+            self._edit_wordsearch_form.insert('end', ''.join(line_list) + '\n')
+
+        for line_list in self._wordbank_content:
+            self._edit_wordbank_form.insert('end', ''.join(line_list) + '\n')
+
+
+    def draw_solution(self, word) -> None:
         '''
         Draws a solution for the given word
         '''
         # update puzzle units
-        self._create_puzzle_units()
+        self._create_puzzle_origin()
         origin_x, origin_y = self._puzzle_origin[0], self._puzzle_origin[1]
         found_search_list = self._answer_dict[word]
         for fs in found_search_list:
@@ -337,9 +399,9 @@ class SolverApp:
                      (fs.dy * (len(word) - 0.5) * self._puzzle_unit_y)
             self._canvas.create_line(
                 x1, y1, x2, y2,
-                tags='solution-line-' + word, fill='blue', width=2)
+                tags='solution-line-' + word, fill='green', stipple='gray50', width=8)
 
-    def _create_puzzle_units(self):
+    def _create_puzzle_origin(self) -> None:
         '''
         Creates units on puzzle image to simplify drawing
         '''
@@ -351,7 +413,22 @@ class SolverApp:
         wordsearch_origin_x, wordsearch_origin_y = self.img_to_canvas(*self._wordsearch_on_img)
         self._puzzle_origin = cropped_origin_x + wordsearch_origin_x + self._puzzle_unit_x * 0.5, \
                               cropped_origin_y + wordsearch_origin_y + self._puzzle_unit_y * 0.5
-        print('origin', self._puzzle_origin)
+        # print('origin', self._puzzle_origin)
+
+    def _update_wordsearch(self) -> None:
+        '''
+        Updates the puzzle after user edits its contents
+        '''
+        wordsearch_content = self._edit_wordsearch_form.get('1.0', 'end-1c')
+        new_wordsearch_content = [list(line) for line in wordsearch_content.splitlines()]
+        wordbank_content = self._edit_wordbank_form.get('1.0', 'end-1c')
+        new_wordbank_content = [line for line in wordbank_content.splitlines()]
+        self._wordsearch_content = new_wordsearch_content
+        self._wordbank_content = new_wordbank_content
+        print(self._wordbank_content)
+        self.solve_and_update()
+        self._calculate_units()
+        print(new_wordsearch_content)
 
     def run(self) -> None:
         '''
