@@ -18,7 +18,7 @@ class SolverApp:
         # root window
         self._root_window = tkinter.Tk()
         self._root_window.title('Word Search')
-        self._root_window.geometry('800x600')
+        self._root_window.geometry('1200x700')
         self._root_window.minsize(width=300, height=300)
         self._root_window.bind('<Configure>', image_updater(self))
 
@@ -28,6 +28,7 @@ class SolverApp:
         self._sidebar_bottom = tkinter.Frame()
         self._sidebar_right_1 = tkinter.Frame()
         self._sidebar_right_2 = tkinter.Frame()
+        self._sidebar_right_bottom = tkinter.Frame()
 
         # canvas
         self._canvas = tkinter.Canvas(width=300, height=200, bg='black')
@@ -78,9 +79,6 @@ class SolverApp:
         self._confirm_wordbank_button = tkinter.Button(
             self._sidebar_bottom, text='Confirm Selection', command=self._confirm_wordbank_selection
         )
-        self._edit_wordsearch_button = tkinter.Button(
-            self._sidebar_bottom, text='Edit Word Search', command=self._edit_wordsearch
-        )
         self._edit_wordsearch_form = scrolledtext.ScrolledText(
             self._sidebar_right_1, width=30, height=20
         )
@@ -88,7 +86,7 @@ class SolverApp:
             self._sidebar_right_2, width=30, height=20
         )
         self._confirm_edit_wordsearch_button = tkinter.Button(
-            self._sidebar_right_1, text='Update', command=self._update_wordsearch
+            self._sidebar_right_bottom, text='Update', command=self._update_wordsearch
         )
 
         # initialize positions
@@ -111,12 +109,21 @@ class SolverApp:
         self._sidebar_right_2.grid(
             row=0, column=4
         )
+        self._sidebar_right_bottom.grid(
+            row=1, column=3, columnspan=2
+        )
 
         self._open_button.grid(
             row=0, column=0, sticky='nesw'
         )
-        self._autosolve_mode.grid(
-            row=0, column=0, sticky='n'
+        # self._autosolve_mode.grid(
+        #     row=0, column=0, sticky='n'
+        # )
+        self._edit_wordsearch_form.grid(
+            row=0, column=0
+        )
+        self._edit_wordbank_form.grid(
+            row=1, column=0
         )
 
     def _convert_image(self) -> 'PhotoImage':
@@ -311,9 +318,6 @@ class SolverApp:
         self._word_select_list.grid(
             row=0, column=0
         )
-        self._edit_wordsearch_button.grid(
-            row=1, column=0
-        )
 
 
     def create_solution(self) -> None:
@@ -363,16 +367,8 @@ class SolverApp:
         print(self._answer_dict)
         self._word_select_list.bind('<<ListboxSelect>>', _word_selector(self))
 
-    def _edit_wordsearch(self) -> None:
-        '''
-        Edit the wordsearch puzzle
-        '''
-        self._edit_wordsearch_form.grid(
-            row=0, column=0
-        )
-        self._edit_wordbank_form.grid(
-            row=1, column=0
-        )
+        # show results and create update button
+
         self._confirm_edit_wordsearch_button.grid(
             row=2, column=0
         )
@@ -382,7 +378,6 @@ class SolverApp:
 
         for line_list in self._wordbank_content:
             self._edit_wordbank_form.insert('end', ''.join(line_list) + '\n')
-
 
     def draw_solution(self, word) -> None:
         '''
@@ -423,6 +418,8 @@ class SolverApp:
         new_wordsearch_content = [list(line) for line in wordsearch_content.splitlines()]
         wordbank_content = self._edit_wordbank_form.get('1.0', 'end-1c')
         new_wordbank_content = [line for line in wordbank_content.splitlines()]
+        self._edit_wordsearch_form.delete('1.0', tkinter.END)
+        self._edit_wordbank_form.delete('1.0', tkinter.END)
         self._wordsearch_content = new_wordsearch_content
         self._wordbank_content = new_wordbank_content
         print(self._wordbank_content)
