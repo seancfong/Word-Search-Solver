@@ -31,7 +31,7 @@ class SolverApp:
         self._sidebar_right_bottom = tkinter.Frame()
 
         # canvas
-        self._canvas = tkinter.Canvas(width=300, height=200, bg='black')
+        self._canvas = tkinter.Canvas(width=500, height=700, bg='black')
         self._bounding_box = None
         self._image_object = None
         self._wordsearch_info = None
@@ -135,7 +135,7 @@ class SolverApp:
         # add labels
         tkinter.Label(self._sidebar_right_1, text='Word Search Text').grid(row=0, column=0)
         tkinter.Label(self._sidebar_right_2, text='Word Bank Text').grid(row=0, column=0)
-        self._word_select_list_label = tkinter.Label(self._sidebar_bottom, text='Select words to display:')
+        self._word_select_list_label = tkinter.Label(self._sidebar_bottom, text='Select words to solve:')
         self._select_wordsearch_label = tkinter.Label(self._sidebar_bottom, text='Select the puzzle area.')
         self._select_wordbank_label = tkinter.Label(self._sidebar_bottom, text='Select the wordbank area.')
 
@@ -143,7 +143,52 @@ class SolverApp:
         '''
         Resets the application to its original state.
         '''
-        pass
+        # remove buttons
+        self._puzzle_select_button.grid_forget()
+        self._word_bank_select_button.grid_forget()
+        self._process_button.grid_forget()
+        self._redo_select_button.grid_forget()
+        self._confirm_wordsearch_button.grid_forget()
+        self._select_wordsearch_label.grid_forget()
+        self._word_select_list_label.grid_forget()
+        self._confirm_edit_wordsearch_button.grid_forget()
+        self._edit_wordsearch_form.delete('1.0', tkinter.END)
+        self._edit_wordbank_form.delete('1.0', tkinter.END)
+        self._word_select_list.delete(0, tkinter.END)
+        self._word_select_list.grid_forget()
+
+        # add buttons
+        self._open_button.grid(
+            row=1, column=0, sticky='nesw'
+        )
+
+        # reset attributes
+        self._puzzle_select_button['state'] = tkinter.NORMAL
+        self._word_bank_select_button['state'] = tkinter.NORMAL
+        self._reset_select()
+        self._end_selection()
+        self._bounding_box = None
+        self._image_object = None
+        self._wordsearch_info = None
+        self._wordsearch_content = []
+        self._wordbank_content = []
+        self._wordbank_info = None
+        self._wordsearch_results = None
+        self._wordbank_results = None
+        self._wordsearch_on_img = None
+        self._wordbank_on_img = None
+        self._answer_dict = dict()
+        self._puzzle_origin = None
+        self._puzzle_unit_x = None
+        self._puzzle_unit_y = None
+        self._answer_marking_dict = dict()
+
+        self._canvas = tkinter.Canvas(width=300, height=200, bg='black')
+        self._canvas.grid(
+            row=0, column=1, rowspan=2,
+            sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W
+        )
+
 
     def _convert_image(self) -> 'PhotoImage':
         '''
@@ -240,10 +285,12 @@ class SolverApp:
         self._redo_select_button.grid(
             row=1, column=0, sticky='nesw'
         )
+        self._confirm_wordbank_button.grid_forget()
         self._confirm_wordsearch_button.grid(
             row=2, column=0, sticky='nesw'
         )
         # edit labels
+        self._select_wordbank_label.grid_forget()
         self._select_wordsearch_label.grid(
             row=0, column=0
         )
@@ -284,10 +331,12 @@ class SolverApp:
         self._redo_select_button.grid(
             row=1, column=0, sticky='nesw'
         )
+        self._confirm_wordsearch_button.grid_forget()
         self._confirm_wordbank_button.grid(
             row=2, column=0, sticky='nesw'
         )
         # edit labels
+        self._select_wordsearch_label.grid_forget()
         self._select_wordbank_label.grid(
             row=0, column=0
         )
