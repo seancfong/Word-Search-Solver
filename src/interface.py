@@ -104,13 +104,13 @@ class SolverApp:
             row=1, column=2
         )
         self._sidebar_right_1.grid(
-            row=0, column=3
+            row=0, column=3, sticky='S'
         )
         self._sidebar_right_2.grid(
-            row=0, column=4
+            row=0, column=4, sticky='S'
         )
         self._sidebar_right_bottom.grid(
-            row=1, column=3, columnspan=2
+            row=1, column=3, columnspan=2, sticky='N'
         )
 
         self._open_button.grid(
@@ -125,6 +125,7 @@ class SolverApp:
         self._edit_wordbank_form.grid(
             row=1, column=0
         )
+        
 
     def _convert_image(self) -> 'PhotoImage':
         '''
@@ -368,9 +369,8 @@ class SolverApp:
         self._word_select_list.bind('<<ListboxSelect>>', _word_selector(self))
 
         # show results and create update button
-
         self._confirm_edit_wordsearch_button.grid(
-            row=2, column=0
+            row=0, column=0, sticky=tkinter.N
         )
 
         for line_list in self._wordsearch_content:
