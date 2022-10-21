@@ -24,10 +24,7 @@ Add badges from somewhere like: [shields.io](https://shields.io/)
 
 ## Installation
 
-Install my-project with npm
-
 ```bash
   npm install my-project
   cd my-project
 ```
-    
