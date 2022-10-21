@@ -7,7 +7,7 @@ any image of a word search puzzle. Used with OpenCV and PyTesseract.
 
 ## Authors
 
-- [@octokatherine](https://www.github.com/octokatherine)
+- [@cnfgsean](https://www.github.com/cnfgsean)
 
 
 ## Badges
@@ -23,6 +23,7 @@ Add badges from somewhere like: [shields.io](https://shields.io/)
 
 ![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
 
+GIF capture by https://gifcap.dev/
 
 ## Getting Started
 ## Installation
