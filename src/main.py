@@ -1,2 +1,4 @@
+import interface
+
 if __name__ == '__main__':
-    print('hello')
+    interface.SolverApp().run()
