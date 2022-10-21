@@ -20,6 +20,8 @@ class Searcher:
         coordinates and direction of the found location
         '''
         finds = []
+        if len(word) == 0:
+            return
         for r in range(len(self._contents)):
             for c in range(len(self._contents[r])):
                 if self._contents[r][c] == word[0]:
