@@ -21,10 +21,13 @@ class SolverApp:
 
         # root window
         self._root_window = customtkinter.CTk()
-        self._root_window.title('Word Search')
+        self._root_window.title('wsvision 2.0.1')
         self._root_window.geometry('1200x700')
         self._root_window.minsize(width=800, height=500)
         self._root_window.bind('<Configure>', image_updater(self))
+
+        # font
+        self._font_button = customtkinter.CTkFont(family="Calibri", size=18)
 
         # menu frames
         self._menu = customtkinter.CTkFrame(self._root_window)
@@ -35,7 +38,7 @@ class SolverApp:
         self._sidebar_right_bottom = customtkinter.CTkFrame(self._root_window)
 
         # canvas
-        self._canvas = tkinter.Canvas(width=500, height=700, bg='black')
+        self._canvas = tkinter.Canvas(width=500, height=700)
         self._bounding_box = None
         self._image_object = None
         self._wordsearch_info = None
@@ -46,6 +49,8 @@ class SolverApp:
         self._wordbank_results = None
         self._wordsearch_on_img = None
         self._wordbank_on_img = None
+        self._welcome_image = customtkinter.CTkImage(Image.open('assets/welcome.png'), size=(400,500))
+        self._welcome_image_label = customtkinter.CTkLabel(self._root_window, image=self._welcome_image, height=700, text="")
 
 
         # for solutions
@@ -61,28 +66,28 @@ class SolverApp:
 
         # buttons
         self._open_button = customtkinter.CTkButton(
-            self._sidebar, text='Open Image', command=self._open_image
+            self._sidebar, text='Open Image', command=self._open_image, font=self._font_button
         )
         self._reset_button = customtkinter.CTkButton(
-            self._sidebar, text='Reset Solver', command=self._reset_app
+            self._sidebar, text='Reset Solver', command=self._reset_app, font=self._font_button
         )
         self._process_button = customtkinter.CTkButton(
-            self._sidebar, text='Solve', command=self._solve_puzzle
+            self._sidebar, text='Solve', command=self._solve_puzzle, font=self._font_button
         )
         self._puzzle_select_button = customtkinter.CTkButton(
-            self._sidebar, text='Select Word Search', command=self._begin_wordsearch_select
+            self._sidebar, text='Select Word Search', command=self._begin_wordsearch_select, font=self._font_button
         )
         self._word_bank_select_button = customtkinter.CTkButton(
-            self._sidebar, text='Select Word Bank', command=self._begin_wordbank_select
+            self._sidebar, text='Select Word Bank', command=self._begin_wordbank_select, font=self._font_button
         )
         self._redo_select_button = customtkinter.CTkButton(
-            self._sidebar_bottom, text='Redo Selection', command=self._reset_select
+            self._sidebar_bottom, text='Redo Selection', command=self._reset_select, font=self._font_button
         )
         self._confirm_wordsearch_button = customtkinter.CTkButton(
-            self._sidebar_bottom, text='Confirm Selection', command=self._confirm_wordsearch_selection
+            self._sidebar_bottom, text='Confirm Selection', command=self._confirm_wordsearch_selection, font=self._font_button
         )
         self._confirm_wordbank_button = customtkinter.CTkButton(
-            self._sidebar_bottom, text='Confirm Selection', command=self._confirm_wordbank_selection
+            self._sidebar_bottom, text='Confirm Selection', command=self._confirm_wordbank_selection, font=self._font_button
         )
         self._edit_wordsearch_form = customtkinter.CTkTextbox(
             self._sidebar_right_1, width=200, height=300
@@ -98,25 +103,19 @@ class SolverApp:
         # self._menu.grid(
         #     row=1, column=0, sticky= tkinter.S
         # )
-        self._canvas.grid(
+        self._welcome_image_label.grid(
             row=0, column=1, rowspan=2,
             sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W,
-            padx=20, pady=10
+            padx=20
         )
         self._sidebar.grid(
             row=0, column=2, padx=5
-        )
-        self._sidebar_bottom.grid(
-            row=1, column=2
         )
         self._sidebar_right_1.grid(
             row=0, column=3, sticky='S', padx=5
         )
         self._sidebar_right_2.grid(
             row=0, column=4, sticky='S', padx=5
-        )
-        self._sidebar_right_bottom.grid(
-            row=1, column=3, columnspan=2, sticky='N', pady=5
         )
 
         self._open_button.grid(
@@ -161,6 +160,8 @@ class SolverApp:
         self._edit_wordbank_form.delete('1.0', tkinter.END)
         self._word_select_list.delete(0, tkinter.END)
         self._word_select_list.grid_forget()
+        self._sidebar_bottom.grid_forget()
+        self._sidebar_right_bottom.grid_forget()
 
         # add buttons
         self._open_button.grid(
@@ -188,10 +189,11 @@ class SolverApp:
         self._puzzle_unit_y = None
         self._answer_marking_dict = dict()
 
-        self._canvas = tkinter.Canvas(width=300, height=200, bg='black')
-        self._canvas.grid(
+        self._canvas.grid_forget()
+        self._welcome_image_label.grid(
             row=0, column=1, rowspan=2,
-            sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W
+            sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W,
+            padx=20
         )
 
 
@@ -259,12 +261,24 @@ class SolverApp:
         '''
         Updates interface for autosolve mode
         '''
+        self._sidebar_bottom.grid(
+            row=1, column=2
+        )
+        self._sidebar_right_bottom.grid(
+            row=1, column=3, columnspan=2, sticky='N', pady=5
+        )
         self._open_button.grid_forget()
         self._puzzle_select_button.grid(
             row=1, column=0, sticky='nesw', pady=5
         )
         self._word_bank_select_button.grid(
             row=2, column=0, sticky='nesw', pady=5
+        )
+        self._welcome_image_label.grid_forget()
+        self._canvas.grid(
+            row=0, column=1, rowspan=2,
+            sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W,
+            padx=20, pady=10
         )
 
     def _end_selection(self) -> None:
@@ -570,7 +584,7 @@ def bounding_box_finish(self) -> callable:
     return _finish_draw
 
 
-def image_updater(self) -> callable:
+def image_updater(self, convert=False) -> callable:
     def _update(event=None) -> None:
         '''
         Updates the current image displayed
