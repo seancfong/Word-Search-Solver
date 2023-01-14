@@ -42,7 +42,7 @@ class Imaging:
     def _crop_selection(self, coord1, coord2) -> 'Image':
         x1, y1 = coord1
         x2, y2 = coord2
-        print(x1, y1, x2, y2)
+        # print(x1, y1, x2, y2)
         if x2 < x1:
             x1, x2 = x2, x1
             y1, y2 = y2, y1
@@ -54,7 +54,7 @@ class Imaging:
         all_data = []
 
         for i, b in enumerate(pytesseract.image_to_data(cropped_img, config=config).splitlines()):
-            print(b)
+            # print(b)
             if i != 0:
                 b = b.split()
                 if len(b) == 12:
@@ -65,7 +65,7 @@ class Imaging:
                     cv2.putText(cropped_img, char, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, (50, 50, 255), 2)
                     all_data.append(TextData(x=x, y=y, w=w, h=h, char=char, conf=conf))
 
-        print(all_data)
+        # print(all_data)
         # cv2.imshow('Test image', cropped_img)
         # cv2.waitKey(0)
         return all_data
