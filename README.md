@@ -6,13 +6,13 @@ any image of a word search puzzle. Used with OpenCV and PyTesseract.
 
 ## Demonstrations
 
-> Opening image of word search puzzle 
+### Opening image of word search puzzle 
 
-![Word Highlighter](/src/media/open%20and%20scan%20v2.0.1.gif?raw=true "Word Highlighter")
+![Word Highlighter](/src/media/open_and_scan_2_v2_0_1.gif?raw=true "Word Highlighter")
 
-> Displaying scanned words
+### Displaying scanned words
 
-![Word Highlighter](/src/media/word%20display%20v2.0.1.gif?raw=true "Word Highlighter")
+![Word Highlighter](/src/media/word_display_2_v2_0_1.gif?raw=true "Word Highlighter")
 
 GIF capture by https://gifcap.dev/
 
