@@ -28,6 +28,7 @@ class SolverApp:
 
         # font
         self._font_button = customtkinter.CTkFont(family="Calibri", size=18)
+        self._font_mono = customtkinter.CTkFont(family="Consolas", size=16)
 
         # menu frames
         self._menu = customtkinter.CTkFrame(self._root_window)
@@ -90,10 +91,10 @@ class SolverApp:
             self._sidebar_bottom, text='Confirm Selection', command=self._confirm_wordbank_selection, font=self._font_button
         )
         self._edit_wordsearch_form = customtkinter.CTkTextbox(
-            self._sidebar_right_1, width=200, height=300
+            self._sidebar_right_1, width=200, height=300, font=self._font_mono
         )
         self._edit_wordbank_form = customtkinter.CTkTextbox(
-            self._sidebar_right_2, width=200, height=300
+            self._sidebar_right_2, width=200, height=300, font=self._font_mono
         )
         self._confirm_edit_wordsearch_button = customtkinter.CTkButton(
             self._sidebar_right_bottom, text='Update Changes', command=self._update_wordsearch
